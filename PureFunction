@@ -1,0 +1,14 @@
+public class TaxUtil {
+    public double calculateTax(double amount,double rate) {
+            double tax_amount=0;
+            tax_amount=amount * rate;
+            return tax_amount;
+        }
+        public static void main(String args[])
+        {
+            TaxUtil tax = new TaxUtil();
+
+            System.out.println(tax.calculateTax(15,0.15));
+        }
+}
+
