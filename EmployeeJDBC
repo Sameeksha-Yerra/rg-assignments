@@ -1,0 +1,164 @@
+
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+
+public class EmployeeJDBC {
+    private final String url = "jdbc:postgresql://localhost:5432/EmployeeJdbcCRUD";
+    private final String user = "postgres";
+    private final String password = "Postgres@555";
+
+    public EmployeeJDBC() {
+        createEmployeeTable(); // Ensure table exists when an instance is created
+    }
+
+    // Establish connection to the database
+    private Connection connect() throws SQLException {
+        return DriverManager.getConnection(url, user, password);
+    }
+
+    // Create employee table if it does not exist
+    private void createEmployeeTable() {
+        String SQL = "CREATE TABLE IF NOT EXISTS employee (" +
+                "id SERIAL PRIMARY KEY," +
+                "name VARCHAR(100) NOT NULL," +
+                "department VARCHAR(100) NOT NULL" +
+                ")";
+
+        try (Connection conn = connect();
+             Statement stmt = conn.createStatement()) {
+            stmt.execute(SQL);
+            System.out.println("Employee table created successfully (if not exists)");
+        } catch (SQLException ex) {
+            System.out.println("Error creating employee table: " + ex.getMessage());
+        }
+    }
+
+    // Create a new employee
+    public void addEmployee(Employee employee) {
+        String SQL = "INSERT INTO employee (name, department) VALUES (?, ?)";
+
+        try (Connection conn = connect();
+             PreparedStatement pstmt = conn.prepareStatement(SQL, Statement.RETURN_GENERATED_KEYS)) {
+            pstmt.setString(1, employee.getName());
+            pstmt.setString(2, employee.getDepartment());
+
+            int affectedRows = pstmt.executeUpdate();
+            if (affectedRows > 0) {
+                try (ResultSet generatedKeys = pstmt.getGeneratedKeys()) {
+                    if (generatedKeys.next()) {
+                        int id = generatedKeys.getInt(1);
+                        employee.setId(id); // Set the generated ID to the employee object
+                        System.out.println("Employee added successfully with ID: " + id);
+                    }
+                }
+            }
+        } catch (SQLException ex) {
+            System.out.println("Error adding employee: " + ex.getMessage());
+        }
+    }
+
+    // Retrieve all employees
+    public List<Employee> getAllEmployees() {
+        List<Employee> employees = new ArrayList<>();
+        String SQL = "SELECT * FROM employee";
+
+        try (Connection conn = connect();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(SQL)) {
+
+            while (rs.next()) {
+                int id = rs.getInt("id");
+                String name = rs.getString("name");
+                String department = rs.getString("department");
+                Employee employee = new Employee(id, name, department);
+                employees.add(employee);
+            }
+        } catch (SQLException ex) {
+            System.out.println("Error retrieving employees: " + ex.getMessage());
+        }
+
+        return employees;
+    }
+
+    // Update an employee
+    public void updateEmployee(Employee employee) {
+        String SQL = "UPDATE employee SET name = ?, department = ? WHERE id = ?";
+
+        try (Connection conn = connect();
+             PreparedStatement pstmt = conn.prepareStatement(SQL)) {
+            pstmt.setString(1, employee.getName());
+            pstmt.setString(2, employee.getDepartment());
+            pstmt.setInt(3, employee.getId());
+
+            int affectedRows = pstmt.executeUpdate();
+            if (affectedRows > 0) {
+                System.out.println("Employee updated successfully");
+            } else {
+                System.out.println("Employee not found with ID: " + employee.getId());
+            }
+        } catch (SQLException ex) {
+            System.out.println("Error updating employee: " + ex.getMessage());
+        }
+    }
+
+    // Delete an employee
+    public void deleteEmployee(int id) {
+        String SQL = "DELETE FROM employee WHERE id = ?";
+
+        try (Connection conn = connect();
+             PreparedStatement pstmt = conn.prepareStatement(SQL)) {
+            pstmt.setInt(1, id);
+
+            int affectedRows = pstmt.executeUpdate();
+            if (affectedRows > 0) {
+                System.out.println("Employee deleted successfully");
+            } else {
+                System.out.println("Employee not found with ID: " + id);
+            }
+        } catch (SQLException ex) {
+            System.out.println("Error deleting employee: " + ex.getMessage());
+        }
+    }
+
+    // Main method to test CRUD operations
+    public static void main(String[] args) {
+        EmployeeJDBC app = new EmployeeJDBC();
+
+        // Add new employees
+        app.addEmployee(new Employee(0, "harshith", "HR"));
+        app.addEmployee(new Employee(0, "Sameeksha", "Finance"));
+
+        // Get all employees
+        List<Employee> employees = app.getAllEmployees();
+        if (employees.isEmpty()) {
+            System.out.println("No employees found.");
+        } else {
+            for (Employee emp : employees) {
+                System.out.println(emp);
+            }
+        }
+
+        // Update an employee
+        if (!employees.isEmpty()) {
+            Employee emp = employees.get(0);
+            emp.setName("John Updated");
+            app.updateEmployee(emp);
+        }
+
+        // Delete an employee
+        if (!employees.isEmpty()) {
+            app.deleteEmployee(employees.get(0).getId());
+        }
+
+        // Get all employees again to verify changes
+        employees = app.getAllEmployees();
+        if (employees.isEmpty()) {
+            System.out.println("No employees found.");
+        } else {
+            for (Employee e : employees) {
+                System.out.println(e);
+            }
+        }
+    }
+}
