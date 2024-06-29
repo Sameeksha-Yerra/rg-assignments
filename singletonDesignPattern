@@ -1,0 +1,23 @@
+public class SimpleSingleton {
+    private static SimpleSingleton instance = null;  // Holds the single instance
+
+    private SimpleSingleton() {  // Private constructor prevents instantiation
+    }
+
+    public static SimpleSingleton getInstance() {  // Returns the single instance
+        if (instance == null) {
+            instance = new SimpleSingleton();
+        }
+        return instance;
+    }
+
+    public void showMessage() {
+        System.out.println("Hello from Singleton!");
+    }
+}
+public class Main {
+    public static void main(String[] args) {
+        SimpleSingleton singleton = SimpleSingleton.getInstance();  // Get the single instance
+        singleton.showMessage();  // Use the instance
+    }
+}
